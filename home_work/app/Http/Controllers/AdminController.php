@@ -6,7 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
+
+
 use App\User;
+use App\Levels;
+use App\Suggests;
+use App\Templates;
 
 class AdminController extends Controller
 {
@@ -30,7 +35,7 @@ class AdminController extends Controller
     public function logout()
     {
         Session::flush();
-        return redirect('/admin')->with('flash_message_success', 'Logged out Successfully');
+        return redirect('/admin/logut')->with('flash_message_success', 'Logged out Successfully');
     }
 
     public function settings()
@@ -65,6 +70,64 @@ class AdminController extends Controller
             } else {
                 return redirect('/admin/settings')->with('flash_message_error', 'Incorrect Current Password!');
             }
+        }
+    }
+    public function descLevels()
+    {
+        $descLevels = Levels::all();
+        return view('admin.descLevels', compact('descLevels'));
+    }
+    public function editDL($id)
+    {
+        $dl = Levels::find($id);
+        return view('admin.editDL', compact('dl'));
+    }
+    public function editedDL(Request $request, $id)
+    {
+        if ($request->isMethod('POST')) {
+            $data = $request->all();
+            $lv = Levels::find($id);
+            $lv->descriptionLevel = $data['descLV'];
+            $lv->save();
+            return redirect('admin/descLevels')->with('flash_message_success', 'Description Level Update Successfully!');
+        } else {
+            return redirect('admin/descLevels')->with('flash_message_error', 'Description Level Update Losing!');
+        }
+    }
+    public function suggest(Request  $request, $idTemplate)
+    {
+        $template = Templates::find($idTemplate);
+        $sg = Suggests::where('idTemplate', $idTemplate)->get();
+        return view('admin.suggests', compact('sg', 'template'));
+    }
+    public function editSG($idTemp, $idLV)
+    {
+        $sg = Suggests::where([
+            ['idTemplate', '=', $idTemp],
+            ['idLevel', '=', $idLV]
+        ])->first();
+        return view('admin.editSG', compact('idTemp', 'sg'));
+    }
+    public function editedSG(Request $request, $idTemp, $idLV)
+    {
+        if ($request->isMethod('POST')) {
+            $data = $request->all();
+            $title = $data['titleSG'];
+            $desc = $data['descSG'];
+            $ex = $data['exampleSG'];
+            Suggests::where([
+                ['idTemplate', '=', $idTemp],
+                ['idLevel', '=', $idLV]
+            ])->update(
+                [
+                    'title' => $title,
+                    'descriptionSuggest' => $desc,
+                    'example' => $ex
+                ]
+            );
+            return redirect('admin/suggest/' . $idTemp)->with('flash_message_success', 'Suggest Update Successfully!');
+        } else {
+            return redirect('admin/suggest/' . $idTemp)->with('flash_message_error', 'Description Level Update Losing!');
         }
     }
 }
